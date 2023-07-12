@@ -36,7 +36,6 @@ func (server *Server) WSHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("error in WSHandler: ", err)
 		return
 	}
-	/* THIS WILL DEFINITELY CAUSE PROBLEMS IN THE FUTURE, PAY ATTENTION */
 	/* defer connection.Close() */
 
 	fmt.Println("new connection:", connection.RemoteAddr())
@@ -52,9 +51,9 @@ func (server *Server) WSHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	//JWT token creation end
 	//initial message
-	server.writeMessage(-1, initialPlayerID, token, connection)
+	server.writeMessage(-2, initialPlayerID, token, connection)
 	message := fmt.Sprintf("Your Initial Player ID: %s\nIf you want to change it type '/cid *new player id*'", initialPlayerID)
-	server.writeMessage(1, initialPlayerID, message, connection)
+	server.writeMessage(-1, initialPlayerID, message, connection)
 }
 
 func (server *Server) IncomingMessageHandler(w http.ResponseWriter, r *http.Request) {
@@ -95,6 +94,8 @@ func decodeReceivedData(w http.ResponseWriter, r *http.Request) CommunicationDat
 }
 
 func (server *Server) changePlayerID(senderPlayerID string, commData CommunicationData) {
+	/* Changes PlayerId, if the intended player id exists in the connections no change will be done. */
+
 	intendedPlayerID := commData.Message
 	connection := server.findClientByPlayerID(intendedPlayerID)
 	if connection == nil {
@@ -106,9 +107,10 @@ func (server *Server) changePlayerID(senderPlayerID string, commData Communicati
 			return
 		}
 		newPlayerID := server.connections[connection]
+		server.writeMessage(-2, newPlayerID, token, connection)
+
 		message := fmt.Sprintf("Your new PlayerID: %s", newPlayerID)
-		server.writeMessage(-1, newPlayerID, token, connection)
-		server.writeMessage(1, newPlayerID, message, connection)
+		server.writeMessage(-1, newPlayerID, message, connection)
 		//optional: new player id can be broadcasted so the other players know who changed player id and what is it now
 	} else {
 		server.writeMessage(-1, senderPlayerID, "PlayerID already exists!", server.findClientByPlayerID(senderPlayerID))
@@ -125,7 +127,7 @@ func (server *Server) forwardMessage(senderPlayerID string, commData Communicati
 			}(c)
 		}
 		return true
-	} else if commData.Type == 1 {
+	} else if commData.Type == 1 { //whisper
 		connectionSender := server.findClientByPlayerID(senderPlayerID)
 		connectionReceiver := server.findClientByPlayerID(commData.PlayerID)
 		if connectionSender != nil {
@@ -153,6 +155,13 @@ func (server *Server) forwardMessage(senderPlayerID string, commData Communicati
 func (server *Server) writeMessage(messageType int, senderPlayerID string, message string, connection *websocket.Conn) {
 	/* Writes a message in JSON format to a connection. */
 
+	/*
+		types:
+		-2 -> message is a JWT Token
+		-1 -> it is a system message
+		0 -> broadcast message
+		1 -> client to client whisper message
+	*/
 	sentJsonData, err := json.Marshal(
 		CommunicationData{
 			Type:     messageType,
@@ -171,7 +180,6 @@ func (server *Server) writeMessage(messageType int, senderPlayerID string, messa
 			server.closeAndDeleteConnection(connection)
 		} else {
 			fmt.Println("write error: ", err)
-			return
 		}
 	}
 }

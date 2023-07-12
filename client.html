@@ -1,9 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebSocket Client</title>
+    <title>Chat Room</title>
+    <style>
+        #messagesDiv {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        #input-message {
+            margin-top: 10px;
+        }
+    </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- <script src="script.js"></script> -->
     <script>
         var server_url = "http://localhost:8000";
         var messages_url = server_url + "/messages";
@@ -15,27 +25,44 @@
         };
 
         socket.onmessage = function(event) {
+            var messagesDiv = document.getElementById("messagesDiv");
             const jsonData = JSON.parse(event.data);
-            console.log("JSON: ", jsonData)
-            if (jsonData.Type == -1) {
-                if (jsonData.Message === "PlayerID already exists!"){
-                    console.log(jsonData.Message)
-                }
-                else {
-                    JWTToken = jsonData.Message;
-                }
-            }/* 
-            else if (jsonData.Type == 1){
-                console.log("whisper from: ", jsonData.PlayerID, " : ", jsonData.Message)
-            } */
-            else {
-                console.log(jsonData.PlayerID, ":\t", jsonData.Message)
+            /*  types:
+                -2 -> message is a JWT Token
+                -1 -> it is a system message
+                0 -> broadcast message
+                1 -> client to client whisper message
+            */
+            if (jsonData.Type == -1) {  //system message
+                var style = 'style="color:#b32914;"'
+                messagesDiv.innerHTML += "<p "+style+"><strong>SYSTEM: " + jsonData.Message + "</strong></p>";
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+            else if (jsonData.Type == -2) { //Token
+                JWTToken = jsonData.Message;
+            }
+            else if (jsonData.Type == 1) {  //p2p whisper
+                var style = 'style="color:#893ba8;"'
+                messagesDiv.innerHTML += "<p "+style+"><strong>" + jsonData.Message + "</strong></p>";
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+            else { //broadcast
+                var style = 'style="color:black;"'
+                messagesDiv.innerHTML += "<p "+style+"><strong>" + jsonData.PlayerID + ": " + jsonData.Message + "</strong></p>";
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
         };
 
         socket.onclose = function(event) {
             console.log("WebSocket connection ended");
         };
+        
+        $(document).ready(function(){
+            $('#messageInput').keypress(function(e){
+                if(e.keyCode==13)
+                    $('#sendButton').click();
+            });
+        });
 
         function sendMessage() {
             const message = $('#messageInput').val();
@@ -53,6 +80,8 @@
                     console.error('Error sending message:', error);
                 }
             });
+            var inputField = document.getElementById("messageInput");
+            inputField.value = "";
         }
 
         function parseMessage(raw_message) {
@@ -88,11 +117,9 @@
     </script>
 </head>
 <body>
-    <h1>WebSocket Client</h1>
-    <h4>Usage;</h4>
-    <h4>- The messages you will sent, will be broadcasted to everyone who is connected to the server.</h4>
-    <h4>- To whisper another client type "/to *client id* your message"</h4>
-    <input style="width: 800px;" type="text" id="messageInput" placeholder="type your message">
-    <button onclick=sendMessage()>Send</button>
+    <div id="messagesDiv"></div>
+    <p></p>
+    <button onclick=sendMessage() id="sendButton">Send</button>
+    <input style="width: 90%;" type="text" id="messageInput" placeholder="Type your message">
 </body>
 </html>
