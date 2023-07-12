@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Room</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-10 ">
+        <h2 class="text-center">Chat Room</h2>
+        <div id="messageContainer" class="card p-5 mb-3">
+          <ul id="messageList" class="list-unstyled"></ul>
+        </div>
+        <form id="chatForm">
+          <div class="input-group">
+            <input type="text" id="messageInput" class="form-control" placeholder="Type your message">
+            <div class="input-group-append">
+              <button type="submit" class="btn btn-primary">Send</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <script>
+    $(document).ready(function() {
+      // Handle form submission
+      $('#chatForm').submit(function(e) {
+        e.preventDefault();
+        const message = $('#messageInput').val();
+        sendMessage(message);
+        $('#messageInput').val('');
+      });
+
+      // Function to send a message
+      function sendMessage(message) {
+        // Your code to send the message to the server
+        // Implement the logic to handle message sending
+        
+        // This is a placeholder example to show the message on the page
+        const formattedMessage = `<li>${message}</li>`;
+        $('#messageList').append(formattedMessage);
+      }
+    });
+  </script>
+</body>
+</html>

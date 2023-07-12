@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Client</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- <script src="script.js"></script> -->
+    <script>
+        var server_url = "http://localhost:8000";
+        var messages_url = server_url + "/messages";
+        var socket = new WebSocket("ws://localhost:8000/ws");
+        var JWTToken = "";
+
+        socket.onopen = function(event) {
+            console.log("WebSocket Connected Succesfully");
+        };
+
+        socket.onmessage = function(event) {
+            const jsonData = JSON.parse(event.data);
+            console.log("JSON: ", jsonData)
+            if (jsonData.Type == -1) {
+                if (jsonData.Message === "PlayerID already exists!"){
+                    console.log(jsonData.Message)
+                }
+                else {
+                    JWTToken = jsonData.Message;
+                }
+            }/* 
+            else if (jsonData.Type == 1){
+                console.log("whisper from: ", jsonData.PlayerID, " : ", jsonData.Message)
+            } */
+            else {
+                console.log(jsonData.PlayerID, ":\t", jsonData.Message)
+            }
+        };
+
+        socket.onclose = function(event) {
+            console.log("WebSocket connection ended");
+        };
+
+        function sendMessage() {
+            const message = $('#messageInput').val();
+            $.ajax({
+                url: messages_url,
+                type: 'POST',
+                headers: {'Token':JWTToken},
+                dataType: 'html',
+                contentType: 'application/json',
+                data: JSON.stringify(parseMessage(message)),
+                success: function(response) {
+                    //console.log(response)
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error sending message:', error);
+                }
+            });
+        }
+
+        function parseMessage(raw_message) {
+            raw_message = raw_message.toString();
+
+            if (raw_message.slice(0,3) === "/to"){
+                //whisper
+                player_id = raw_message.split(" ")[1],
+                message = raw_message.slice(player_id.length + 5)    // +5 stands for /to + 2 spaces
+                return {
+                    "Type": 1,
+                    "PlayerID": player_id,
+                    "Message" : message
+                }
+            }
+            else if (raw_message.slice(0,4) == "/cid") {
+                //change playerID
+                message = raw_message.split(" ")[1]
+                return {
+                    "Type": -1,
+                    "PlayerID": null,
+                    "Message": message
+                }
+            }
+            else {
+                return {
+                    "Type": 0,
+                    "PlayerID": null,
+                    "Message": raw_message
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>WebSocket Client</h1>
+    <h4>Usage;</h4>
+    <h4>- The messages you will sent, will be broadcasted to everyone who is connected to the server.</h4>
+    <h4>- To whisper another client type "/to *client id* your message"</h4>
+    <input style="width: 800px;" type="text" id="messageInput" placeholder="type your message">
+    <button onclick=sendMessage()>Send</button>
+</body>
+</html>
