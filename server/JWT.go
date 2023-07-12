@@ -31,6 +31,8 @@ func GenerateJWT(playerID string) (string, error) {
 }
 
 func extractJWTToken(tokenString string) *jwt.Token {
+	/* Extracts token data from JWT Token */
+
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 		_, ok := t.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
@@ -51,6 +53,7 @@ func ValidateJWT(tokenString string) bool {
 }
 
 func GetPlayerIDFromJWTToken(tokenString string) string {
+	/* Extracts PlayerID from JWT Token payload */
 
 	token := extractJWTToken(tokenString)
 
