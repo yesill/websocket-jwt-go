@@ -82,7 +82,7 @@ func (server *Server) IncomingMessageHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func decodeReceivedData(w http.ResponseWriter, r *http.Request) CommunicationData {
-	/* Decodes recieved JSON data from client to a 'ReceivedData' and returns it. */
+	/* Decodes received JSON data from client to a 'CommunicationData' and returns it. */
 
 	decoder := json.NewDecoder(r.Body)
 	var commData CommunicationData
